@@ -1,0 +1,168 @@
+---
+title: "BIOS 500"
+author: "Adrian Glover"
+date: "2/15/2019"
+output: html_document
+---
+Markdown
+# Header
+## subheader
+plain text
+*italics*
+**bold**
+'verbatim'
+1. List
+2. List
+- Bullet 1
+- Bullet 2
+Footnote. [^1]
+[^1]: The footnote.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Accessing and importing data
+
+## Setting up a working directory
+From: https://www.datacamp.com/community/tutorials/r-tutorial-read-excel-into-r
+
+This tells you where your working directory is set currently:
+
+```{r}
+#getwd()
+```
+
+Then you can change it to the folder where your dataset is stored so that you don't have to type out full paths every time:
+
+```{r}
+#setwd("/Users/adrian/Desktop/")
+```
+
+## CSV files
+From: https://www.lexjansen.com/phuse/2014/ad/AD04.pdf
+
+To quickly copy a file or folder path to the clipboard in Mac OS X, select the file or folder in the OS X Finder, then hit Command+i to summon Get Info. Click and drag alongside “Where” to select the path, then hit Command+C to copy the full path to the clipboard.
+
+You can also type '/' and then 'tab' and it will let you search:
+
+```{r}
+data1 <- read.csv("/Users/adrian/Desktop/work_countries_data.csv")
+```
+
+## Excel file
+From: https://www.datacamp.com/community/tutorials/r-tutorial-read-excel-into-r and https://www.statmethods.net/input/importingdata.html 
+
+If you save your data set as a tab-delimited texts file or '*.txt' file:
+
+```{r}
+data2 <- read.table("<FileName.txt>", header = TRUE, sep = ",", row.names = "id")
+```
+
+Or you can access the Excel files directly (the first row should contain the variable/column names) from https://rstudio-pubs-static.s3.amazonaws.com/413264_1a9480fe7a0448e0840d6cdb39b4ded2.html:
+
+```{r}
+library(readxl)
+data3 <- read_excel("/Users/adrian/Desktop/GeorgiaLatinoDiabetesProgram.xlsx", col_names = TRUE)
+data3
+```
+
+## SAS file
+from https://www.datacamp.com/community/tutorials/r-data-import-tutorial#sas:
+
+```{r}
+install.packages("sas7bdat")
+library(sas7bdat)
+data4 <- read.sas7bdat("/Users/adrian/Desktop/DRAWERS/SASUniversityEdition/myfolders/SASCOURSE/data/education_income.sas7bdat")
+data4
+```
+
+# Exploring data
+
+## Cleaning data
+See 'IDENTIFYING MISSING VALUES, DATA MODIFICATION' in https://www.lexjansen.com/phuse/2014/ad/AD04.pdf 
+
+## Viewing data
+
+```{r}
+str(data3) # similar to proc contents
+
+data3 # similar to proc print
+```
+ ## Exploring data
+ https://dabblingwithdata.wordpress.com/2018/01/02/my-favourite-r-package-for-summarising-data/
+ 
+ Frequencies:
+ 
+```{r}
+
+```
+ 
+ 
+ Descriptive statistics: 
+ 
+```{r}
+# mean,median,25th and 75th quartiles,min,max
+summary(data3, na.omit(data3))
+
+# n, nmiss, unique, mean, 5,10,25,50,75,90,95th percentiles 
+# 5 lowest and 5 highest scores
+install.packages("Hmisc")
+library(Hmisc)
+describe(data3)
+
+# item name ,item number, nvalid, mean, sd, 
+# median, mad, min, max, skew, kurtosis, se
+install.packages("psych")
+library(psych)
+describe(data3)
+
+# creating tables with Kable
+# mean, stdev, min, med, max, MAD, IQR, CV, skewness, SE.skewness, kurtosis, n.valid, pct.valid
+install.packages("summarytools")
+install.packages("knitr")
+install.packages("kableExtra")
+library(summarytools)
+mydata <- summarytools::descr(data3)
+mydata
+View(mydata)
+kableExtra::kable(as.data.frame(summarytools::descr(data3)))
+# can also transpose to arrange variables by row instead
+kableExtra::kable(as.data.frame(summarytools::descr(data3, transpose = TRUE)))
+# there is also a fancier option that summarizes a whole dataframe that you can output directly into markdown or HTML
+mydata2 <- dfSummary(data3)
+View(mydata2)
+```
+ 
+Descriptive statistics by group:
+
+```{r}
+psych::describeBy(data3, "sexo")
+```
+
+Univariate statistics:
+https://flowingdata.com/2012/05/15/how-to-visualize-and-compare-distributions/
+
+http://sites.utexas.edu/sos/guided/descriptive/numericaldd/descriptiven2/groupedhist/
+
+```{r}
+library(psych)
+
+# Univariate stats
+describe(data3$yrs_school)
+
+# Histogram
+hist(data3$yrs_school, breaks = 5, right = T)
+
+# Grouped histogram
+yrs_school_male <- data3$yrs_school[data3$sexo==1]
+yrs_school_female <- data3$yrs_school[data3$sexo==2]
+hist(yrs_school_male, main = "Distribution of Yrs of School (Males)", xlab = "Yrs school", breaks = 5, right = T, xlim = c(1,6), ylim = c(0, 250), col = "Orange")
+hist(yrs_school_female, main = "Distribution of Yrs of School (Females)", xlab = "Yrs school", breaks = 5, right = T, xlim = c(1,6), ylim = c(0, 250), col = "Orange")
+
+# Boxplot
+boxplot(data3$yrs_school)
+```
+
+
+

@@ -1,0 +1,148 @@
+---
+title: "Model Selection for MLR"
+author: "Adrian Glover"
+date: "3/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Homework Description
+
+Lab 4 Homework
+
+This assignment, worth 20 pts total.
+
+The SAS dataset jet2(located in ‘S:\course\BIOS501\lab exercise data\’) contains data from a study on the appearance and technological factors of 22 new aircraft designs. For all technological factors, higher values correspond to more advanced technology. The following variables are included:
+
+  FFD – Time of first appearance of aircraft design, measured in months after January 1940.
+  Natural log transformed to satisfy normality assumption.
+
+(Smaller values mean earlier appearances/older designs.)
+
+  SPR – Specific power, proportional to power per unit weight
+  RGF – Flight range factor
+  PLF – Payload as a function of gross weight of the aircraft
+  SLF – Sustained load factor
+  CAR – Y = Aircraft can land on a carrier N = Aircraft cannot land on a carrier
+ 
+Researchers are interested in:
+
+  i) Predicting the age of a jet based on its technological specifications
+  ii) Identifying any potential technological trends over time
+ 
+Prior to conducting the regression analysis, you should do an exploratory analysis of each variable. You are not required to report any results on the HW, but include this in your SAS code with a brief comment on each variable. **
+
+Recall that dependent response variables in PROC REG must be NUMERIC, i.e.,you must create a dummy variable if the response variable is CHARACTER.
+
+# Author: Joan Braithwaite 
+Activate the `sas7bdat` library  (after installing the package sas7bdat)
+
+```{r}
+library(sas7bdat)
+```
+
+Read in the SAS data  (using forward slashes in path)
+
+```{r}
+Jet <- read.sas7bdat("/Users/adrian/bios501/jet2.sas7bdat")
+```
+
+str(data.frame) = structure of data, provides data class, num of observations vs variables, and name of class of each variable and preview of its contents -- similar to PROC CONTENTS
+
+view(data.frame) = opens and view the content of the data frame  -- similar to PROC PRINT
+
+```{r}
+str(Jet)
+Jet
+View(Jet)
+head(Jet)
+tail(Jet)
+```
+
+Exploratory data analysis
+```{r}
+summary(Jet)
+pairs(Jet)
+plot(Jet$FFD, Jet$SPR, main='FFD/SPR', xlab='FFD', ylab='SPR', col="red")
+```
+
+Create dummy variables for 'CAR' (binary Y/N variable)
+from https://cran.r-project.org/web/packages/fastDummies/vignettes/making-dummy-variables.html
+
+```{r}
+install.packages("fastDummies")
+library(fastDummies)
+dummy_cols(Jet, remove_first_dummy = TRUE)
+Jet2 <- data.frame(dummy_cols(Jet, remove_first_dummy = TRUE))
+Jet2
+```
+
+
+
+All-possible-regressions strategy
+```{r}
+# Full model
+fit <- lm(FFD ~ SPR + RGF + PLF + SLF + CAR_Y, data=Jet2)
+summary(fit) # show results
+
+# Other useful functions
+coefficients(fit) # model coefficients
+confint(fit, level=0.95) # CIs for model parameters 
+fitted(fit) # predicted values
+residuals(fit) # residuals
+anova(fit) # anova table 
+vcov(fit) # covariance matrix for model parameters 
+influence(fit) # regression diagnostics
+```
+  
+```{r}
+library(MASS)
+  y = Jet2$FFD
+  x1 = Jet2$SPR
+  x2 = Jet2$RGF
+  x3 = Jet2$PLF
+  x4 = Jet2$SLF
+  x5 = Jet2$CAR_Y
+fit <- lm(y ~ x1 + x2 + x3 + x4 + x5, data=Jet2)
+step <- stepAIC(fit, direction="forward")
+step <- stepAIC(fit, direction="backward")
+step <- stepAIC(fit, direction="both")
+step$anova # display results
+
+# Final Model
+fit <- lm(y ~ x1 + x2 + x4 + x5, data=Jet2)
+fit
+```
+
+Forward selection strategy
+```{r}
+null <-lm(FFD~1, data=Jet2)  #No variables included in the model
+full <- lm(FFD ~., data=Jet2) #Full Model with all variables
+
+# This tells R to start with the null model and search through models lying in the
+# range between the null and full model using the forward selection algorithm.
+
+step(null, scope=list(lower=null, upper=full), direction="forward")
+```
+
+Backward elimination strategy
+```{r}
+step(full, data =Jet2, direction="backward")
+```
+
+
+Stepwise selection strategy
+```{r}
+step(null, scope = list(upper=full), data=Jet2, direction="both")
+```
+
+Run the full model
+```{r}
+fit <- lm(FFD ~ SPR + RGF + CAR + SLF, data=Jet2)
+summary(fit) # show results
+```
